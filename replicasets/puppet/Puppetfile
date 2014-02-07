@@ -1,10 +1,6 @@
 forge "http://forge.puppetlabs.com"
 
-# only during testing
-mod 'mongodb', :path => '/tmp/mongodb-ng'
-
 mod "puppetlabs/apt", "1.2.0"
 mod "puppetlabs/stdlib", "4.1.0"
 
-#mod "mongodb",
-#   :git => "git://github.com/hcguersoy/puppet-mongodb-ng.git"
+mod "mongodb", :git => "git://github.com/hcguersoy/puppet-mongodb-ng.git"
