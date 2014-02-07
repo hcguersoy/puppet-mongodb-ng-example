@@ -1,0 +1,76 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Example for starting a simple replica set, 
+# using two small VMs.
+Vagrant.configure("2") do |config|
+
+  require 'vagrant-hostmanager'
+
+  #enable cache
+  config.cache.auto_detect = true
+
+  #may you wanna change this to precise32
+  #if you're running on a 32b system
+  config.vm.box = "precise64"
+
+  # enable this and put the mongodb DEB file to ../files if you want
+  # to be independent from MongoDB Inc. repository 
+  # config.vm.synced_folder "../files", "/tmp/mongodbfiles/", disabled: false
+
+  #Hostmanager definitions
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = true
+
+  # Provisioners
+  config.vm.provision :hostmanager
+
+  #Install Puppet
+  config.vm.provision :shell, :path => "../bin/install-puppet-upgrade.sh"
+
+  # Shell provisioner to install puppet-librarien
+  # has to run before the Puppet provisioner starts
+  config.vm.provision :shell, :path => "../bin/librarian-bootstrap.sh"
+
+  #default settings for VB
+  config.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
+      vb.customize ["modifyvm", :id, "--cpus", 1]
+      vb.gui = false
+      #may be needed by librarian
+      vb.customize ["setextradata", :id, "VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root", "1"]
+  end #VB
+
+  config.vm.define :node1 do | vm_node1|
+     vm_node1.vm.hostname = "node1"
+     vm_node1.vm.network :private_network, ip: '192.168.56.11'
+     vm_node1.hostmanager.aliases = %w(node1.localdomain)
+     vm_node1.vm.provider :virtualbox do |vb|      
+      vb.name = 'node1'
+    end #vb
+    
+    vm_node1.vm.provision :puppet do |puppet|
+      puppet.manifests_path = "puppet/manifests"
+      puppet.options = "--verbose"
+      puppet.manifest_file  = "node1.pp"
+    end #puppet
+  end # vm1
+
+  config.vm.define :node2 do | vm_node2|
+     vm_node2.vm.hostname = "node2"
+     vm_node2.vm.network :private_network, ip: '192.168.56.12'
+     vm_node2.hostmanager.aliases = %w(node2.localdomain)
+     vm_node2.vm.provider :virtualbox do |vb|      
+      vb.name = 'node2'
+    end #vb
+    
+    vm_node2.vm.provision :puppet do |puppet|
+      puppet.manifests_path = "puppet/manifests"
+      puppet.options = "--verbose"
+      puppet.manifest_file  = "node2.pp"
+    end #puppet
+  end # vm1
+
+end
